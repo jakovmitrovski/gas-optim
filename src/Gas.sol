@@ -9,7 +9,6 @@ contract GasContract {
     mapping(address => Payment[]) payments;
     mapping(address => uint256) public whitelist;
     address[5] public administrators;
-    bool isReady = false;
 
     enum PaymentType {
         Unknown,
