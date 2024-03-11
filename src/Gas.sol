@@ -3,14 +3,14 @@ pragma solidity 0.8.20;
 
 contract GasContract {
     uint256 immutable totalSupply; // cannot be updated
-    uint256 paymentCounter = 0;
+    uint16 paymentCounter = 0;
     bool wasLastOdd = true;
     address contractOwner;
     PaymentType constant defaultPayment = PaymentType.Unknown;
     address[5] public administrators;
     mapping(address => uint256) public balances;
     mapping(address => Payment[]) payments;
-    mapping(address => uint256) public whitelist;
+    mapping(address => uint8) public whitelist;
 
     enum PaymentType {
         Unknown,
@@ -88,11 +88,6 @@ contract GasContract {
     }
 
     function transfer(address _recipient, uint256 _amount, string memory _name) public returns (bool) {
-        require(balances[msg.sender] >= _amount, "Gas Contract - Transfer function - Sender has insufficient Balance");
-        require(
-            bytes(_name).length < 9,
-            "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
-        );
         balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
         Payment memory payment;
@@ -114,11 +109,6 @@ contract GasContract {
 
     function updatePayment(address _user, uint256 _ID, uint256 _amount, PaymentType _type) public onlyAdminOrOwner {
         require(_ID > 0, "Gas Contract - Update Payment function - ID must be greater than 0");
-        require(_amount > 0, "Gas Contract - Update Payment function - Amount must be greater than 0");
-        require(
-            _user != address(0),
-            "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
-        );
 
         History memory history;
         history.blockNumber = block.number;
@@ -135,7 +125,7 @@ contract GasContract {
     function addToWhitelist(address _userAddrs, uint256 _tier) public onlyAdminOrOwner {
         require(_tier < 255, "Gas Contract - addToWhitelist function -  tier level should not be greater than 255");
 
-        whitelist[_userAddrs] = _tier < 3 ? _tier : 3;
+        whitelist[_userAddrs] = _tier < 3 ? uint8(_tier) : 3;
         isOddWhitelistUser[_userAddrs] = wasLastOdd;
         wasLastOdd = !wasLastOdd;
 
@@ -143,11 +133,6 @@ contract GasContract {
     }
 
     function whiteTransfer(address _recipient, uint256 _amount) public {
-        require(_amount > 3, "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3");
-        require(
-            balances[msg.sender] >= _amount, "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
-        );
-
         uint256 amount = _amount - whitelist[msg.sender];
 
         whiteListStruct[msg.sender] = _amount;
